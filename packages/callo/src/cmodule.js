@@ -1,4 +1,4 @@
-const { errors, reserved } = require('./constants');
+const { errors, reserved, handleTypes } = require('./constants');
 const CalloError = require('./cerror');
 
 class Module {
@@ -77,37 +77,37 @@ class Module {
       }
 
       switch (resolved.handleType) {
-        case HandleType.REWIND:
+        case handleTypes.REWIND:
           iter.rewindBy(resolved.count-1);
           break;
-        case HandleType.JUMP:
+        case handleTypes.JUMP:
           iter.jumpBy(resolved.count+1);
           break;
-        case HandleType.NEXT:
+        case handleTypes.NEXT:
           iter.next();
           break;
 
-        case HandleType.ABORT:
+        case handleTypes.ABORT:
           this.state = {}; // clear state
           okHandler(this.req, this.res, this);
           done = true;
           replied = true;
           break;
-        case HandleType.ORDER:
+        case handleTypes.ORDER:
           iter.next();
           this.state[reserved.FLOW_ID] = iter.getCurrId();
           okHandler(this.req, this.res, this);
           done = true;
           replied = true;
           break;
-        case HandleType.ORDER_REWIND:
+        case handleTypes.ORDER_REWIND:
           iter.rewindBy(resolved.count-1);
           this.state[reserved.FLOW_ID] = iter.getCurrId();
           okHandler(this.req, this.res, this);
           done = true;
           replied = true;
           break;
-        case HandleType.ORDER_JUMP:
+        case handleTypes.ORDER_JUMP:
           iter.jumpBy(resolved.count);
           this.state[reserved.FLOW_ID] = iter.getCurrId();
           okHandler(this.req, this.res, this);
