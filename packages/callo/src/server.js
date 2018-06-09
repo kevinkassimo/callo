@@ -4,12 +4,17 @@ const bodyParser = require('body-parser');
 const compression = require('compression');
 
 const { errors } = require('./constants');
+const {
+  Cache: CalloCache,
+} = require('./cache');
 const CalloError = require('./cerror');
 const CalloModule = require('./cmodule');
 const { isEmpty } = require('./utils');
 
 class Server {
   constructor(opt) {
+    if (!(this instanceof Server)) return new Server(opt);
+
     this.cache = new CalloCache();
 
     this.middlewareFlow = new Flow();

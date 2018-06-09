@@ -1,5 +1,6 @@
 class Flow {
   constructor(defaultChain = []) {
+    if (!(this instanceof Flow)) return new Flow(defaultChain);
     this.chain = defaultChain.slice();
   }
 
