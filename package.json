@@ -13,6 +13,10 @@
   "author": "Kevin Qian <kevinkassimo@gmail.com> (http://ksm.sh)",
   "license": "ISC",
   "dependencies": {
+    "compression": "^1.7.2",
+    "content-type": "^1.0.4",
+    "http-errors": "^1.6.3",
+    "raw-body": "^2.3.3",
     "warning": "^4.0.0"
   },
   "devDependencies": {
