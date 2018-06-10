@@ -11,6 +11,7 @@ const constants = {
   },
 
   handleTypes: {
+    END: '$$CALLO_END',
     ABORT: '$$CALLO_ABORT',
     ORDER: '$$CALLO_ORDER',
     ORDER_REWIND: '$$CALLO_ORDER_REWIND',
@@ -19,6 +20,8 @@ const constants = {
     REWIND: '$$CALLO_REWIND',
     JUMP: '$$CALLO_JUMP',
     NEXT: '$$CALLO_NEXT',
+
+    UNKNOWN: '$$CALLO_UNKNOWN',
   },
 
   reserved: {

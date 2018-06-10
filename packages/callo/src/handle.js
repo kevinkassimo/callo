@@ -1,14 +1,15 @@
 const { handleTypes } = require('./constants');
 
 class Handle {
-  constructor(req, res, resolve, reject) {
+  constructor(req, res, resolve, reject, mod, proxyState) {
     this.req = req; // actual request handler
     this.res = res;
 
-    this.state = state;
-
     this._resolve = resolve;
     this._reject = reject;
+
+    this._mod = mod;
+    this._proxyState = proxyState;
   }
 
   _callResolve(handleType, action, data, count) {
@@ -16,6 +17,9 @@ class Handle {
       console.warn('WARNING: Cannot submit another handle action');
       return;
     }
+
+    // Avoid set state
+    this._mod._sealState(this._proxyState);
 
     const resolvedObject = {
       handleType,
@@ -36,23 +40,10 @@ class Handle {
 
     // Avoid duplicate resolve
     this._resolve = null;
-    // Avoid set state
-    const validator = {
-      get(target, key) {
-        if (typeof target[key] === 'object' && target[key] !== null) {
-          return new Proxy(target[key], validator);
-        } else {
-          return target[key];
-        }
-      },
-      set: function(obj, key, value) {
-        console.warn('WARNING: cannot modify state after handled')
-      },
-      deleteProperty: function (oTarget, sKey) {
-        console.warn('WARNING: cannot modify state after handled')
-      },
-    };
-    this.state = new Proxy({ ...this.state }, validator);
+  }
+
+  end(data) {
+    this._callResolve(handleTypes.END, handleTypes.END, data);
   }
 
   abort(data) {
@@ -96,10 +87,8 @@ class Handle {
   }
 
   next() {
-    this.order(handleTypes.NEXT, {});
+    this._callResolve(handleTypes.NEXT, handleTypes.NEXT);
   }
 }
 
-module.exports = {
-  Handle,
-};
+module.exports = Handle;

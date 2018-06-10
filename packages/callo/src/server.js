@@ -9,6 +9,7 @@ const {
 } = require('./cache');
 const CalloError = require('./cerror');
 const CalloModule = require('./cmodule');
+const { Flow, NamedFlow } = require('./flow');
 const { isEmpty } = require('./utils');
 
 class Server {
@@ -34,13 +35,21 @@ class Server {
 
   _handleError = (err, req, res) => {
     let errMsg;
+    let errObj;
+
     if (typeof err === 'string') {
       errMsg = err;
     } else if (err instanceof CalloError) {
       errMsg = err.type;
+    } else if (err instanceof Error) {
+      errMsg = err.message;
+      errObj = err;
     } else {
       errMsg = err.toString();
     }
+
+    console.warn(errObj ? errObj : new Error(errMsg));
+
     try {
       res.statusCode = 418; // TODO: use a more accurate status code
       res.end(JSON.stringify({ error: errMsg }));
@@ -102,10 +111,10 @@ class Server {
       return;
     }
 
-    let jsonObject;
+    let jsonObject = req.body;
 
     try {
-      jsonObject = JSON.parse(body);
+      // jsonObject = JSON.parse(req.body);
       if (jsonObject.state) {
         jsonObject.state = this._decrypt(jsonObject.state); // decrypt here
       }
@@ -130,12 +139,20 @@ class Server {
     }
   };
 
-  handler = (req, res) => {
-    const opt = this.options;
-    if (opt.compress) {
-      this.useExpressMiddleware(compression(opt.compressionOptions));
+  handler = () => {
+    // check if all the handlers are already registered.
+    // If not, register them
+    if (this.unregisteredFlows.length > 0) {
+      this.commit();
     }
-    this._applyExpressMiddlewares(req, res, this._coreHandler, this._handleError);
+
+    return (req, res) => {
+      const opt = this.options;
+      if (opt.compress) {
+        this.useExpressMiddleware(compression(opt.compressionOptions));
+      }
+      this._applyExpressMiddlewares(req, res, this._coreHandler, this._handleError);
+    };
   };
 
   _sendResponse = (req, res, mod) => {
@@ -161,6 +178,7 @@ class Server {
     }
 
     try {
+      res.setHeader('content-type', 'application/json');
       res.end(json);
     } catch (err) {
       this._handleError(err, req, res);
@@ -223,21 +241,24 @@ class Server {
     }
   };
 
-  pre(flow) {
+  pre = (flow) => {
     this.middlewareFlow.use(flow);
-  }
+  };
 
-  on(name) {
+  on = (name) => {
     let namedFlow = new NamedFlow(name);
     this.unregisteredFlows.push(namedFlow);
     return namedFlow;
-  }
+  };
 
-  commit() {
+  commit = () => {
     for (const f of this.unregisteredFlows) {
+      f.pre(this.middlewareFlow);
       this.cache.registerNamedFlow(f);
     }
-  }
+    // clear unregistered flows
+    this.unregisteredFlows = [];
+  };
 }
 
 module.exports = Server;

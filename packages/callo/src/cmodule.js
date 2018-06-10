@@ -1,5 +1,6 @@
 const { errors, reserved, handleTypes } = require('./constants');
 const CalloError = require('./cerror');
+const Handle = require('./handle');
 
 class Module {
   constructor(name, req, res, props, state, server) {
@@ -8,28 +9,33 @@ class Module {
     this.res = res;
 
     // disable set attempts
-    const validator = {
+    const propsValidator = {
       get(target, key) {
         if (typeof target[key] === 'object' && target[key] !== null) {
-          return new Proxy(target[key], validator);
+          return new Proxy(target[key], propsValidator);
         } else {
           return target[key];
         }
       },
-      set: function(obj, key, value) {
-        console.warn('WARNING: cannot modify props on server side')
+      set(obj, key, value) {
+        console.warn('WARNING: cannot modify props on server side');
+        return true;
       },
-      deleteProperty: function (oTarget, sKey) {
-        console.warn('WARNING: cannot modify props on server side')
+      deleteProperty(obj, key) {
+        console.warn('WARNING: cannot modify props on server side');
+        return true;
       },
     };
-    this.props = new Proxy(props, validator);
+    this.props = new Proxy(props, propsValidator);
 
     this.state = state;
+
     this.server = server;
 
     this.action = null;
     this.data = {};
+
+    this._kSealSymbol = Symbol('seal');
   }
 
   static toCalloModule(obj, req, res, server) {
@@ -38,6 +44,49 @@ class Module {
     }
     return new Module(obj.name, req, res, obj.props || {}, obj.state || {}, server);
   }
+
+  _sealState = (state) => {
+    state[this._kSealSymbol] = true;
+  };
+
+  _createProxyState = () => {
+    let _isSealed = false;
+    let self = this;
+
+    const stateValidator = {
+      get(target, key) {
+        if (typeof target[key] === 'object' && target[key] !== null) {
+          return new Proxy(target[key], stateValidator);
+        } else {
+          return target[key];
+        }
+      },
+      set(obj, key, value) {
+        if (_isSealed) {
+          console.warn('WARNING: cannot modify state after handling');
+          return true;
+        }
+
+        // Special key for sealing
+        if (key === self._kSealSymbol) {
+          _isSealed = true;
+          return true;
+        }
+
+        obj[key] = value;
+        return true;
+      },
+      deleteProperty(obj, key) {
+        if (_isSealed) {
+          console.warn('WARNING: cannot modify state after handling');
+          return true;
+        }
+        delete obj[key];
+        return true;
+      },
+    };
+    return new Proxy(this.state, stateValidator);
+  };
 
   process = async (okHandler) => {
     const cache = this.server.cache;
@@ -49,6 +98,7 @@ class Module {
       iter = cache.getEntryIteratorByName(this.name);
     }
     if (!iter || !iter.getCurr()) {
+      this.action = handleTypes.UNKNOWN;
       okHandler(this.req, this.res, this);
       return;
     }
@@ -64,8 +114,10 @@ class Module {
       }
 
       const promise = new Promise((resolve, reject) => {
-        const h = new Handle(req, res, resolve, reject);
-        fn(h, this.props, this.state);
+        const _proxyState = this._createProxyState();
+        const h = new Handle(this.req, this.res, resolve, reject, this, _proxyState);
+        // The proxy states are independent of each other
+        fn(h, this.props, _proxyState);
       });
 
       const resolved = await promise;
@@ -87,6 +139,12 @@ class Module {
           iter.next();
           break;
 
+        case handleTypes.END:
+          this.state = {}; // clear state
+          okHandler(this.req, this.res, this);
+          done = true;
+          replied = true;
+          break;
         case handleTypes.ABORT:
           this.state = {}; // clear state
           okHandler(this.req, this.res, this);

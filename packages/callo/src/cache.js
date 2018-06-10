@@ -1,3 +1,5 @@
+const { NamedFlow } = require('./flow');
+
 class Cache {
   constructor() {
     this.cache = []; // array to allow fast access
@@ -13,30 +15,30 @@ class Cache {
     }
 
     if (this.entryMap.has(flow.name)) {
-      throw new Error('This named flow is already registered');
+      throw new Error('Flow name is already registered');
     }
 
     this.entryMap.set(flow.name, this.cache.length);
-    this.cache.concat(flow.chain);
+    this.cache = this.cache.concat(flow.chain);
     this.cache.push(null); // null implies termination
   }
 
   getEntryIdByName(name) {
-    if (!this.entryMap.get(name)) {
+    if (!this.entryMap.has(name)) {
       return null; // null for no entry
     }
     return this.entryMap.get(name);
   }
 
   getEntryIteratorByName(name) {
-    if (!this.entryMap.get(name)) {
+    if (!this.entryMap.has(name)) {
       return null; // null for no entry
     }
-    return new CalloCacheIterator(this, this.entryMap.get(name));
+    return new CacheIterator(this, this.entryMap.get(name));
   }
 
   getEntryIteratorFromId(id) {
-    return new CalloCacheIterator(this, id);
+    return new CacheIterator(this, id);
   }
 
   get(id) {
@@ -57,24 +59,18 @@ class CacheIterator {
     return this.id;
   }
 
-  getNextId() {
-    return this.id + 1;
-  }
-
   getCurr() {
     return this.cache.get(this.id);
   }
 
-  getNext() {
-    this.id++;
-    return this.cache.get(this.id);
-  }
-
   next() {
-    this.id++;
+    if (this.cache.get(this.id) !== null) {
+      this.id++;
+    }
   }
 
   rewindBy(amt) {
+    if (amt <= 0) return;
     while (amt > 0 && this.cache.get(this.id-1)) {
       amt--;
       this.id--;
@@ -82,6 +78,7 @@ class CacheIterator {
   }
 
   jumpBy(amt) {
+    if (amt <= 0) return;
     while (amt > 0 && this.cache.get(this.id+1)) {
       amt--;
       this.id++;
