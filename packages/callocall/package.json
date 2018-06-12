@@ -1,0 +1,27 @@
+{
+  "name": "callocall",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf dist/** && babel src --out-dir dist",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [],
+  "author": "Kevin Qian <kevinkassimo@gmail.com> (http://ksm.sh)",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-0": "^6.24.1"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "isomorphic-fetch": "^2.2.1"
+  }
+}

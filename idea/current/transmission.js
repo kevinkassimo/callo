@@ -9,13 +9,6 @@ const s2cPkg = {
   state: "encrypted",
 };
 
-const encryptedState = {
-  state: {
-    stateData: 'blah',
-  },
-  nonce: 'random',
-};
-
 /*
  * Client --> Server
  */

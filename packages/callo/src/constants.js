@@ -12,7 +12,7 @@ const constants = {
 
   handleTypes: {
     END: '$$CALLO_END',
-    ABORT: '$$CALLO_ABORT',
+    // ABORT: '$$CALLO_ABORT', // ABORT is needless, since we have END
     ORDER: '$$CALLO_ORDER',
     ORDER_REWIND: '$$CALLO_ORDER_REWIND',
     ORDER_JUMP: '$$CALLO_ORDER_JUMP',

@@ -4,7 +4,7 @@ const Handle = require('./handle');
 
 class Module {
   constructor(name, req, res, props, state, server) {
-    this.name = name.toString();
+    this.name = name ? String(name) : null;
     this.req = req;
     this.res = res;
 
@@ -35,11 +35,12 @@ class Module {
     this.action = null;
     this.data = {};
 
+    // unique symbol that avoids user tampering
     this._kSealSymbol = Symbol('seal');
   }
 
   static toCalloModule(obj, req, res, server) {
-    if (!obj || typeof obj !== 'object') {
+    if (typeof obj !== 'object') {
       throw new CalloError(errors.ERR_REQ_BODY_CONTENT);
     }
     return new Module(obj.name, req, res, obj.props || {}, obj.state || {}, server);
@@ -130,22 +131,16 @@ class Module {
 
       switch (resolved.handleType) {
         case handleTypes.REWIND:
-          iter.rewindBy(resolved.count-1);
+          iter.rewindBy(resolved.count);
           break;
         case handleTypes.JUMP:
-          iter.jumpBy(resolved.count+1);
+          iter.jumpBy(resolved.count);
           break;
         case handleTypes.NEXT:
           iter.next();
           break;
 
         case handleTypes.END:
-          this.state = {}; // clear state
-          okHandler(this.req, this.res, this);
-          done = true;
-          replied = true;
-          break;
-        case handleTypes.ABORT:
           this.state = {}; // clear state
           okHandler(this.req, this.res, this);
           done = true;
@@ -159,7 +154,7 @@ class Module {
           replied = true;
           break;
         case handleTypes.ORDER_REWIND:
-          iter.rewindBy(resolved.count-1);
+          iter.rewindBy(resolved.count);
           this.state[reserved.FLOW_ID] = iter.getCurrId();
           okHandler(this.req, this.res, this);
           done = true;
@@ -172,7 +167,7 @@ class Module {
           done = true;
           replied = true;
           break;
-        default: // as if called next(), but actually should be forever stalled...
+        default: // as if called next()
           iter.next();
           break;
       }

@@ -33,6 +33,90 @@ class Server {
     this.options = opt;
   }
 
+  /* public */
+
+  /*
+   * Add a callo middleware
+   * Attach this flow to the front all flows to be registered
+   */
+  pre = (flow) => {
+    this.middlewareFlow.use(flow);
+  };
+
+  /*
+   * Add a new handle flow, identified through name
+   * Just like naming a function
+   */
+  on = (name) => {
+    let namedFlow = new NamedFlow(name);
+    this.unregisteredFlows.push(namedFlow);
+    return namedFlow;
+  };
+
+  /*
+   * Register all flows created by .on()
+   */
+  commit = () => {
+    for (const f of this.unregisteredFlows) {
+      f.pre(this.middlewareFlow);
+      this.cache.registerNamedFlow(f);
+    }
+    // clear unregistered flows
+    this.unregisteredFlows = [];
+  };
+
+  /*
+   * Use express middlewares
+   */
+  useExpressMiddleware = (middleware) => {
+    this.expressMiddlewares.push(middleware);
+  };
+
+  /*
+   * Set options
+   */
+  set = (key, value) => {
+    const opt = this.options;
+
+    if (!key || !value) {
+      return;
+    }
+
+    switch (key.toString().toLowerCase()) {
+      case 'compress':
+        opt.compress = value;
+        break;
+      case 'compressOptions':
+        opt.compressOptions = value;
+        break;
+      case 'password':
+        opt.password = value;
+        break;
+    }
+  };
+
+  /*
+   * Create a Node http server compatible handler
+   * Would run .commit() if not yet
+   */
+  handler = () => {
+    // check if all the handlers are already registered.
+    // If not, register them
+    if (this.unregisteredFlows.length > 0) {
+      this.commit();
+    }
+
+    return (req, res) => {
+      const opt = this.options;
+      if (opt.compress) {
+        this.useExpressMiddleware(compression(opt.compressionOptions));
+      }
+      this._applyExpressMiddlewares(req, res, this._coreHandler, this._handleError);
+    };
+  };
+
+  /* private */
+
   _handleError = (err, req, res) => {
     let errMsg;
     let errObj;
@@ -55,12 +139,7 @@ class Server {
       res.end(JSON.stringify({ error: errMsg }));
     } catch (e) {
       console.warn(e);
-      // TODO: better handling
     }
-  };
-
-  useExpressMiddleware = (middleware) => {
-    this.expressMiddlewares.push(middleware);
   };
 
   _applyExpressMiddlewares = (req, res, handler, errorHandler) => {
@@ -139,22 +218,6 @@ class Server {
     }
   };
 
-  handler = () => {
-    // check if all the handlers are already registered.
-    // If not, register them
-    if (this.unregisteredFlows.length > 0) {
-      this.commit();
-    }
-
-    return (req, res) => {
-      const opt = this.options;
-      if (opt.compress) {
-        this.useExpressMiddleware(compression(opt.compressionOptions));
-      }
-      this._applyExpressMiddlewares(req, res, this._coreHandler, this._handleError);
-    };
-  };
-
   _sendResponse = (req, res, mod) => {
     const responseObject = {
       data: mod.data,
@@ -185,26 +248,6 @@ class Server {
     }
   };
 
-  set = (key, value) => {
-    const opt = this.options;
-
-    if (!key || !value) {
-      return;
-    }
-
-    switch (key.toString().toLowerCase()) {
-      case 'compress':
-        opt.compress = value;
-        break;
-      case 'compressOptions':
-        opt.compressOptions = value;
-        break;
-      case 'password':
-        opt.password = value;
-        break;
-    }
-  };
-
   _encrypt = (obj) => {
     let password = this.options.password;
     let json;
@@ -213,6 +256,11 @@ class Server {
       json = JSON.stringify(obj);
       const iv = crypto.randomBytes(16);
       const salt = crypto.randomBytes(64);
+      // I truly believe the following is too slow... I might consult someone who is damn
+      // good at crypto on whether I should just save the salt and key in server once.
+      // 2145 is a bit small for real security, and too large for fast encryption
+      // I should probably delegate the password gen to user, pbkdf2 once with user-provided salt
+      // And save this key inside the server
       const key = crypto.pbkdf2Sync(password, salt, 2145, 32, 'sha512');
       const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
       const encrypted = Buffer.concat([cipher.update(json, 'utf8'), cipher.final()]);
@@ -239,25 +287,6 @@ class Server {
     } catch (err) {
       throw new CalloError(errors.ERR_DECRYPT);
     }
-  };
-
-  pre = (flow) => {
-    this.middlewareFlow.use(flow);
-  };
-
-  on = (name) => {
-    let namedFlow = new NamedFlow(name);
-    this.unregisteredFlows.push(namedFlow);
-    return namedFlow;
-  };
-
-  commit = () => {
-    for (const f of this.unregisteredFlows) {
-      f.pre(this.middlewareFlow);
-      this.cache.registerNamedFlow(f);
-    }
-    // clear unregistered flows
-    this.unregisteredFlows = [];
   };
 }
 

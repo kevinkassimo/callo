@@ -46,20 +46,16 @@ class Handle {
     this._callResolve(handleTypes.END, handleTypes.END, data);
   }
 
-  abort(data) {
-    this._callResolve(handleTypes.ABORT, handleTypes.ABORT, data);
-  }
-
   order(action, data) {
     this._callResolve(handleTypes.ORDER, action, data);
   }
 
   orderReplay(action, data) {
-    return this.orderRewind(1, action, data);
+    return this.orderRewind(0, action, data);
   }
 
   replay() {
-    return this.rewind(1);
+    return this.rewind(0);
   }
 
   orderRewind(count, action, data) {
@@ -71,11 +67,11 @@ class Handle {
   }
 
   orderSkip(action, data) {
-    return this.orderJump(1, action, data);
+    return this.orderJump(2, action, data);
   }
 
   skip() {
-    return this.jump(1);
+    return this.jump(2);
   }
 
   orderJump(count, action, data) {

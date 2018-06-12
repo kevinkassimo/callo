@@ -16,6 +16,8 @@ srv.pre((h, props, state) => {
 // Use .use to do chaining
 srv.on('test')
   .use((h, props, state) => {
+    console.log(state.__proto__.constructor.name);
+
     state.store = 'my-store';
     if (props.test === undefined) {
       // This tells client:
@@ -34,7 +36,7 @@ srv.on('test')
   })
   .use((h, props, state) => {
     if (props.test !== 1) {
-      h.abort({ bad: 'You sent me the wrong thing!' });
+      h.end({ bad: 'You sent me the wrong thing!' });
       return;
     }
     h.end({ text: `Okay! My state contains: ${util.inspect(state)}, and you sent me ${util.inspect(props)}` });
