@@ -33,7 +33,12 @@ function isEmpty(obj) {
   return true;
 }
 
+function isObject(obj) {
+  return typeof obj === 'object' && obj !== null;
+}
+
 module.exports = {
   defer,
   isEmpty,
+  isObject,
 };

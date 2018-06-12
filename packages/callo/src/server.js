@@ -1,5 +1,3 @@
-const crypto = require('crypto');
-
 const bodyParser = require('body-parser');
 const compression = require('compression');
 
@@ -10,26 +8,84 @@ const {
 const CalloError = require('./cerror');
 const CalloModule = require('./cmodule');
 const { Flow, NamedFlow } = require('./flow');
-const { isEmpty } = require('./utils');
+
+const { isEmpty, isObject } = require('./utils');
+
+const {
+  genKey256,
+  genKey256FromPassword,
+  genSalt64,
+  encrypt,
+  decrypt,
+} = require('./encryption');
+
+// Format crypt data to proper key
+function useCrypt(crypt) {
+  if (isObject(crypt) && crypt.key) {
+    const key = Buffer.from(crypt.key);
+    if (key.length !== 32) { // not 256 bits
+      throw new Error('key not 256 bits');
+    }
+    return { key };
+  } else if (isObject(crypt) && crypt.password) {
+    const password = Buffer.from(crypt.password);
+    const salt = crypt.salt ? Buffer.from(crypt.salt) : genSalt64();
+    return { key: genKey256FromPassword(password, salt) };
+  } else {
+    return { key: genKey256() };
+  }
+}
+
+function formatResponseJSON(action, data, state, key) {
+  const obj = {};
+  if (action) {
+    obj.action = action;
+  }
+  if (data) {
+    obj.data = data;
+  }
+  if (state && !isEmpty(state)) {
+    // Only send state when state is not empty
+    obj.state = encrypt(state, key);
+  }
+  return JSON.stringify(obj);
+}
+
+function formatErrorResponseJSON(error) {
+  return JSON.parse({ error });
+}
 
 class Server {
+  /*
+   * Construct Server
+   * opt = {
+   *   crypt?: {
+   *     password?: String | Buffer
+   *     key?: String | Buffer
+   *     salt?: String | Buffer
+   *   }
+   *   password?: <alias> crypt.password
+   *   key?: <alias> crypt.key
+   *   compress?: Boolean
+   *   compressOptions?: Object (see express compress options)
+   * }
+   */
   constructor(opt) {
-    if (!(this instanceof Server)) return new Server(opt);
-
     this.cache = new CalloCache();
 
     this.middlewareFlow = new Flow();
     this.unregisteredFlows = [];
-
     this.expressMiddlewares = [bodyParser.json()];
 
-    opt = { ...opt };
-
-    // encrypt settings
-    if (!opt.password) {
-      opt.password = crypto.randomBytes(32).toString('hex');
+    opt = { ...opt }; // { ...undefined } okay
+    const tempCrypt = { ...opt.crypt };
+    if (opt.password) {
+      tempCrypt.password = opt.password;
     }
-
+    if (opt.key) {
+      tempCrypt.key = opt.key;
+    }
+    opt.crypt = useCrypt(tempCrypt);
     this.options = opt;
   }
 
@@ -89,8 +145,14 @@ class Server {
       case 'compressOptions':
         opt.compressOptions = value;
         break;
+      case 'crypt':
+        opt.crypt = useCrypt(value);
+        break;
       case 'password':
-        opt.password = value;
+        opt.crypt = useCrypt({ password: value });
+        break;
+      case 'key':
+        opt.crypt = useCrypt({ key: value });
         break;
     }
   };
@@ -185,6 +247,8 @@ class Server {
   };
 
   _coreHandler = async (req, res, next) => {
+    const { key } = this.options.crypt;
+
     if (!req.body) {
       next(errors.ERR_REQ_READ_BODY);
       return;
@@ -193,9 +257,8 @@ class Server {
     let jsonObject = req.body;
 
     try {
-      // jsonObject = JSON.parse(req.body);
       if (jsonObject.state) {
-        jsonObject.state = this._decrypt(jsonObject.state); // decrypt here
+        jsonObject.state = decrypt(jsonObject.state, key);
       }
     } catch (err) {
       next(errors.ERR_REQ_PARSE_BODY);
@@ -219,23 +282,14 @@ class Server {
   };
 
   _sendResponse = (req, res, mod) => {
-    const responseObject = {
-      data: mod.data,
-    };
-
-    if (mod.state && !isEmpty(mod.state)) {
-      responseObject.state = this._encrypt(mod.state);
-    }
-
-    if (mod.action) {
-      responseObject.action = mod.action;
-    }
+    const { key } = this.options.crypt;
 
     let json;
 
     try {
-      json = JSON.stringify(responseObject);
+      json = formatResponseJSON(mod.action, mod.data, mod.state, key);
     } catch (err) {
+      this.
       this._handleError(errors.ERR_RES_PACKAGE_BODY, req, res);
       return;
     }
@@ -245,47 +299,6 @@ class Server {
       res.end(json);
     } catch (err) {
       this._handleError(err, req, res);
-    }
-  };
-
-  _encrypt = (obj) => {
-    let password = this.options.password;
-    let json;
-
-    try {
-      json = JSON.stringify(obj);
-      const iv = crypto.randomBytes(16);
-      const salt = crypto.randomBytes(64);
-      // I truly believe the following is too slow... I might consult someone who is damn
-      // good at crypto on whether I should just save the salt and key in server once.
-      // 2145 is a bit small for real security, and too large for fast encryption
-      // I should probably delegate the password gen to user, pbkdf2 once with user-provided salt
-      // And save this key inside the server
-      const key = crypto.pbkdf2Sync(password, salt, 2145, 32, 'sha512');
-      const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-      const encrypted = Buffer.concat([cipher.update(json, 'utf8'), cipher.final()]);
-      const tag = cipher.getAuthTag();
-      return Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
-    } catch (err) {
-      throw new CalloError(errors.ERR_ENCRYPT);
-    }
-  };
-
-  _decrypt = (enc) => {
-    try {
-      let password = this.options.password;
-      const bData = Buffer.from(enc, 'base64');
-      const salt = bData.slice(0, 64);
-      const iv = bData.slice(64, 80);
-      const tag = bData.slice(80, 96);
-      const text = bData.slice(96);
-      const key = crypto.pbkdf2Sync(password, salt, 2145, 32, 'sha512');
-      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-      decipher.setAuthTag(tag);
-      const decoded = decipher.update(text, 'binary', 'utf8') + decipher.final('utf8');
-      return JSON.parse(decoded);
-    } catch (err) {
-      throw new CalloError(errors.ERR_DECRYPT);
     }
   };
 }
