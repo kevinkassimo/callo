@@ -1,4 +1,4 @@
-const callo = require('../dist');
+const callo = require('../dist/index');
 const http = require('http');
 const util = require('util');
 

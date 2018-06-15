@@ -1,4 +1,4 @@
-const callo = require('../dist');
+const callo = require('../dist/index');
 const http = require('http');
 
 const srv = callo.server({ password: 'password-for-phone-call' });

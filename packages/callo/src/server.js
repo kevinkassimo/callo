@@ -180,27 +180,35 @@ class Server {
   /* private */
 
   _handleError = (err, req, res) => {
-    let errMsg;
-    let errObj;
-
-    if (typeof err === 'string') {
-      errMsg = err;
-    } else if (err instanceof CalloError) {
-      errMsg = err.type;
-    } else if (err instanceof Error) {
-      errMsg = err.message;
-      errObj = err;
+    if (err instanceof CalloError) {
+      console.warn(err.message, err.stack);
+      try {
+        res.statusCode = err.status;
+        res.end(JSON.stringify({ error: err.hint }));
+      } catch (e) {
+        console.warn(e);
+      }
     } else {
-      errMsg = err.toString();
-    }
+      let errMsg;
+      let errObj;
 
-    console.warn(errObj ? errObj : new Error(errMsg));
+      if (typeof err === 'string') {
+        errMsg = err;
+      } else if (err instanceof Error) {
+        errMsg = err.message;
+        errObj = err;
+      } else {
+        errMsg = err.toString();
+      }
 
-    try {
-      res.statusCode = 418; // TODO: use a more accurate status code
-      res.end(JSON.stringify({ error: errMsg }));
-    } catch (e) {
-      console.warn(e);
+      console.warn(errObj ? errObj : new Error(errMsg));
+
+      try {
+        res.statusCode = 500; // Okay, mysterious error
+        res.end(JSON.stringify({ error: errMsg }));
+      } catch (e) {
+        console.warn(e);
+      }
     }
   };
 

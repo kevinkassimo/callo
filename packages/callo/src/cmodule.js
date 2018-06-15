@@ -41,7 +41,7 @@ class Module {
 
   static toCalloModule(obj, req, res, server) {
     if (typeof obj !== 'object') {
-      throw new CalloError(errors.ERR_REQ_BODY_CONTENT);
+      throw new CalloError(400, errors.ERR_REQ_BODY_CONTENT, 'bad request body');
     }
     return new Module(obj.name, req, res, obj.props || {}, obj.state || {}, server);
   }

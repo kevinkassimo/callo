@@ -9,6 +9,8 @@ function Callo(opt) {
 Callo.server = (opt) => {
   return new Server(opt);
 };
-Callo.flow = Flow;
+Callo.flow = (defaultChain) => {
+  return new Flow(defaultChain);
+};
 
 module.exports = Callo;

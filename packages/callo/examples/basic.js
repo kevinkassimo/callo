@@ -1,4 +1,4 @@
-const callo = require('../dist');
+const callo = require('../dist/index');
 const http = require('http');
 const util = require('util');
 
@@ -16,8 +16,6 @@ srv.pre((h, props, state) => {
 // Use .use to do chaining
 srv.on('test')
   .use((h, props, state) => {
-    console.log(state.__proto__.constructor.name);
-
     state.store = 'my-store';
     if (props.test === undefined) {
       // This tells client:
