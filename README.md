@@ -5,7 +5,7 @@ This package is still at its VERY EARLY development state, so it is highly unsta
 It has YET to be published to NPM, since I haven't done all the implementation (e.g. Front End `callocall` is yet a mess... I am also polishing backend code, so sometimes things just does NOT work...)
 
 ## Introduction
-HTTP is a stateless protocol, and we are all thankful of this fact that simplifies a lot of things.  
+HTTP is a stateless protocol, and we are all thankful of thisand we are all thankful of this fact that simplifies a lot of things.
 However, sometimes we want to be able to make our HTTP requests, rather than simply RESTful ones, more similar to a "phone call": I dial to someone, someone asks me for more information, and I later respond. If I gave wrong info or missed some data, rather than brutally hanging off the "phone call", it might be more polite and conceptually easy to ask "PARDON?".  
 
 This is what `Callo` is trying to achieve: it allows, on the server side, to "jump out" of the current flow, and ask for more info from the client, given a special hint of "Action", and necessary data along with such action. Client could respond based on this, and as they forward their fixed request back to the server, we can resume from where we left off before!  
@@ -80,3 +80,5 @@ let sess = CalloCall.session('http://localhost:8000/');
 })();
 ```
 
+## More Documentation
+See [Server Side Documentation](https://github.com/kevinkassimo/callo/packages/callo/README.md);

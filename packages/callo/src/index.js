@@ -1,5 +1,6 @@
 const { Flow } = require('./flow');
 const Server = require('./server');
+const CalloError = require('./cerror');
 require('babel-polyfill');
 
 function Callo(opt) {
@@ -11,6 +12,9 @@ Callo.server = (opt) => {
 };
 Callo.flow = (defaultChain) => {
   return new Flow(defaultChain);
+};
+Callo.error = (...args) => {
+  return new CalloError(...args);
 };
 
 module.exports = Callo;

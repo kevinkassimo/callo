@@ -56,19 +56,21 @@ function formatErrorResponseJSON(error) {
 }
 
 class Server {
-  /*
-   * Construct Server
+  /**
+   * Create a new server
    * opt = {
    *   crypt?: {
-   *     password?: String | Buffer
-   *     key?: String | Buffer
-   *     salt?: String | Buffer
+   *     password?: {String | Buffer}
+   *     key?: {String | Buffer}
+   *     salt?: {String | Buffer}
    *   }
    *   password?: <alias> crypt.password
    *   key?: <alias> crypt.key
-   *   compress?: Boolean
-   *   compressOptions?: Object (see express compress options)
+   *   compress?: {Boolean}
+   *   compressOptions?: {Object} (see express compress options)
    * }
+   * @param {Object} opt
+   * @public
    */
   constructor(opt) {
     this.cache = new CalloCache();
@@ -89,19 +91,23 @@ class Server {
     this.options = opt;
   }
 
-  /* public */
-
-  /*
-   * Add a callo middleware
-   * Attach this flow to the front all flows to be registered
+  /**
+   * Add a new middleware (flow that will be prepended to each named flow)
+   * @param {Flow|function} flow
+   * @return {Server} self
+   * @public
    */
   pre = (flow) => {
     this.middlewareFlow.use(flow);
+    return this;
   };
 
-  /*
-   * Add a new handle flow, identified through name
-   * Just like naming a function
+  /**
+   * Create a new named flow (an identity that is "callable" from client)
+   * (without .commit(), this is only cached)
+   * @param {string} name
+   * @returns {NamedFlow} namedFlow, used for chaining with .use()
+   * @public
    */
   on = (name) => {
     let namedFlow = new NamedFlow(name);
@@ -109,8 +115,10 @@ class Server {
     return namedFlow;
   };
 
-  /*
-   * Register all flows created by .on()
+  /**
+   * Actually register all flows created by .on()
+   * @returns {Server} self
+   * @public
    */
   commit = () => {
     for (const f of this.unregisteredFlows) {
@@ -119,17 +127,32 @@ class Server {
     }
     // clear unregistered flows
     this.unregisteredFlows = [];
+    return this;
   };
 
-  /*
-   * Use express middlewares
+  /**
+   * Use an express middleware
+   * @param {function} middleware
+   * @returns {Server} self
+   * @public
    */
   useExpressMiddleware = (middleware) => {
     this.expressMiddlewares.push(middleware);
+    return this;
   };
 
-  /*
-   * Set options
+  /**
+   * Update options of the server
+   * Currently available options:
+   *   'compress': {boolean} should use compression middleware or not
+   *   'compressOptions': {Object} option that would be submitted to compression middleware
+   *   'crypt': {Object} crypt options
+   *   'password': {Buffer|string} password used to generate key
+   *   'key': {Buffer|string} key used to encrypt state after sent to server
+   * @param {string} key
+   * @param {*} value
+   * @returns {Server} self
+   * @public
    */
   set = (key, value) => {
     const opt = this.options;
@@ -155,11 +178,14 @@ class Server {
         opt.crypt = useCrypt({ key: value });
         break;
     }
+    return this;
   };
 
-  /*
+  /**
    * Create a Node http server compatible handler
-   * Would run .commit() if not yet
+   * (Would run .commit() if not yet committed)
+   * @returns {Function}
+   * @public
    */
   handler = () => {
     // check if all the handlers are already registered.
@@ -184,9 +210,13 @@ class Server {
       console.warn(err.message, err.stack);
       try {
         res.statusCode = err.status;
+        // hint is for client, minimal hint, usually not needed
         res.end(JSON.stringify({ error: err.hint }));
       } catch (e) {
         console.warn(e);
+      }
+      if (err.shouldCrash) {
+        throw err; // Crash!
       }
     } else {
       let errMsg;
@@ -205,7 +235,8 @@ class Server {
 
       try {
         res.statusCode = 500; // Okay, mysterious error
-        res.end(JSON.stringify({ error: errMsg }));
+        // do not expose unnecessary data to client...
+        res.end(JSON.stringify({ error: 'server error' })); // no hint for client!
       } catch (e) {
         console.warn(e);
       }
