@@ -81,4 +81,4 @@ let sess = CalloCall.session('http://localhost:8000/');
 ```
 
 ## More Documentation
-See [Server Side Documentation](https://github.com/kevinkassimo/callo/packages/callo/README.md) and [Client Side Documentation](https://github.com/kevinkassimo/callo/packages/callocall/README.md)
+See [Server Side Documentation](https://github.com/kevinkassimo/callo/blob/master/packages/callo/README.md) and [Client Side Documentation](https://github.com/kevinkassimo/callo/tree/master/packages/callocall)

@@ -1,6 +1,6 @@
 {
   "name": "callocall",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Front-end API call wrapper for Callo",
   "main": "dist/index.js",
   "directories": {
@@ -16,7 +16,11 @@
     "README.md",
     "LICENSE"
   ],
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevinkassimo/callo.git"
+  },
+  "keywords": ["api", "web", "server"],
   "author": "Kevin Qian <kevinkassimo@gmail.com> (http://ksm.sh)",
   "license": "ISC",
   "devDependencies": {
@@ -24,6 +28,7 @@
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
     "babel-preset-stage-0": "^6.24.1",
+    "callo": "0.0.2",
     "jest": "^23.1.0"
   },
   "dependencies": {

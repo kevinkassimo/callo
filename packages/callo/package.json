@@ -1,6 +1,6 @@
 {
   "name": "callo",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Experiment with Minimal Stateful HTTP API",
   "main": "./dist/index.js",
   "scripts": {
@@ -8,12 +8,16 @@
     "build": "rm -rf dist/** && babel src --out-dir dist",
     "clean": "rm -rf dist"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevinkassimo/callo.git"
+  },
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
-  "keywords": [],
+  "keywords": ["api", "server", "web", "framework"],
   "author": "Kevin Qian <kevinkassimo@gmail.com> (http://ksm.sh)",
   "license": "ISC",
   "dependencies": {

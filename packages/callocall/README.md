@@ -2,7 +2,7 @@
 
 ## What is This?
 
-This is the front-end API wrapper for Callo.
+This is the front-end API wrapper for [`Callo`](https://www.npmjs.com/package/callo).
 
 Its goal is to make it as easy to use as Meteor's Method.
 

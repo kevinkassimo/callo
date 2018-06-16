@@ -57,7 +57,7 @@ let Callo = (function() {
         if (fetchSettings && fetchSettings.headers) {
           headers = { ...headers, ...fetchSettings.headers };
         }
-        headers = { ...headers, 'Content-Type': 'application/json' };
+        headers = { ...headers, 'content-type': 'application/json' };
 
         let req = await fetch(this.endpoint, {
           ...fetchSettings,

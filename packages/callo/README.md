@@ -4,7 +4,7 @@
 
 Currently, `Callo` is still at its probably earliest stage of development. Due to its experimental nature, the API might change in the future to something complete different.
 
-ALSO, Callo requires a front-end wrapper for ease of use, `callocall`, should be soon available on NPM.
+ALSO, Callo requires a front-end wrapper for ease of use, [`callocall`](https://www.npmjs.com/package/callocall), should be soon available on NPM.
 
 ## Why?
 
@@ -79,7 +79,7 @@ h.order(actionString, data) // request more data from client, would resume from 
 h.orderReplay(actionString, data) // order version of h.replay
 h.orderRewind(count, actionString, data) // order version of h.rewind
 h.orderSkip(actionString, data) // order version of h.skip
-h.jump(count, actionString, data) // order version of h.jump
+h.orderJump(count, actionString, data) // order version of h.jump
 ```
 
 ### Access Raw Request (IncomingMessage) and Response (ServerResponse)

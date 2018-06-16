@@ -1,5 +1,6 @@
 const Server = require('../dist/server');
 const { defer } = require('../dist/utils');
+const { handleTypes } = require('../dist/constants');
 const http = require('http');
 require('isomorphic-fetch');
 
@@ -149,6 +150,19 @@ describe('test server', () => {
     let j5 = await r5.json();
     expect(j5.data.s1).toBeFalsy();
     expect(j5.data.s2h3).toBe('set in handler 3');
+
+    let r6 = await fetch('http://localhost:8000', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'non-existent',
+        props: {}
+      }),
+    });
+    let j6 = await r6.json();
+    expect(j6.action).toBe(handleTypes.UNKNOWN);
 
     serverDeferred.resolve();
   });
