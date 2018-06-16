@@ -1,8 +1,12 @@
 language: node_js
+node_js:
+- "8"
+- "9"
+- "10"
 sudo: enabled
 env:
-- TEST_DIR=packages/callo
-- TEST_DIR=packages/callocall
+- TEST_DIR=$TRAVIS_BUILD_DIR/packages/callo
+- TEST_DIR=$TRAVIS_BUILD_DIR/packages/callocall
 before_script:
 - cd $TEST_DIR && npm install
 script:

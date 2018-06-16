@@ -1,7 +1,7 @@
 {
   "name": "callocall",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Front-end API call wrapper for Callo",
   "main": "dist/index.js",
   "directories": {
     "test": "tests"
