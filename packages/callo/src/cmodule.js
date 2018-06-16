@@ -180,6 +180,8 @@ class Module {
     if (!replied) {
       // default reply
       console.warn('WARNING: reach end of flow without explicit reply action');
+      // set to handleTypes.END to alert client
+      this.action = handleTypes.END;
       okHandler(this.req, this.res, this);
     }
   };

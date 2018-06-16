@@ -2,15 +2,20 @@
   "name": "callocall",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "rm -rf dist/** && babel src --out-dir dist && jest tests/*.test.js",
     "build": "rm -rf dist/** && babel src --out-dir dist",
     "clean": "rm -rf dist"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [],
   "author": "Kevin Qian <kevinkassimo@gmail.com> (http://ksm.sh)",
   "license": "ISC",
@@ -18,7 +23,8 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
-    "babel-preset-stage-0": "^6.24.1"
+    "babel-preset-stage-0": "^6.24.1",
+    "jest": "^23.1.0"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",

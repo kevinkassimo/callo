@@ -4,6 +4,8 @@
 
 Currently, `Callo` is still at its probably earliest stage of development. Due to its experimental nature, the API might change in the future to something complete different.
 
+ALSO, Callo requires a front-end wrapper for ease of use, `callocall`, should be soon available on NPM.
+
 ## Why?
 
 HTTP is a stateless protocol, and we are all thankful of thisand we are all thankful of this fact that simplifies a lot of things.

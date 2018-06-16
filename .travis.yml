@@ -1,0 +1,9 @@
+language: node_js
+sudo: enabled
+env:
+- TEST_DIR=packages/callo
+- TEST_DIR=packages/callocall
+before_script:
+- cd $TEST_DIR && npm install
+script:
+- cd $TEST_DIR && npm run test

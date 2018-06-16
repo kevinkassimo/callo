@@ -5,9 +5,10 @@ class CalloError extends Error {
   /**
    * Create Callo Error, message for server side message,
    * hint for client side, status for possible response status
-   * @param status
-   * @param message
-   * @param hint
+   * @param {number} status
+   * @param {string} message
+   * @param {string} hint
+   * @param {string} shouldCrash
    */
   constructor(status = 500, message = 'Server-side Error', hint = 'server error', shouldCrash = false) {
     super(message);

@@ -17,21 +17,16 @@ let Callo = (function() {
 
       UNKNOWN: '$$CALLO_UNKNOWN',
     },
-
-    reserved: {
-      FLOW_ID: '$$FLOW_ID',
-    },
   };
 
   class CalloSession {
-    constructor(endpoint) {
+    constructor(endpoint, jar) {
       this.endpoint = endpoint;
-      this.jar = {};
+      this.jar = jar ? jar : {}; // used to set common props
 
       this.error = null;
       this.action = null;
       this.data = null;
-
       this._state = null;
     }
 
@@ -41,9 +36,9 @@ let Callo = (function() {
 
       let combinedProps;
       if (props) {
-        combinedProps = { ...this.propsJar, ...props };
+        combinedProps = { ...this.jar, ...props };
       } else {
-        combinedProps = { ...this.propsJar };
+        combinedProps = { ...this.jar };
       }
 
       const body = {
@@ -63,8 +58,6 @@ let Callo = (function() {
           headers = { ...headers, ...fetchSettings.headers };
         }
         headers = { ...headers, 'Content-Type': 'application/json' };
-
-        console.log(jsonBody);
 
         let req = await fetch(this.endpoint, {
           ...fetchSettings,
@@ -88,7 +81,8 @@ let Callo = (function() {
           this._state = respObject.state;
         }
 
-        if (respObject.action === constants.handleTypes.END) {
+        if (respObject.action === constants.handleTypes.END
+          || respObject.action === constants.handleTypes.UNKNOWN) {
           this._state = null;
           this.error = null;
           this.action = null;
@@ -108,16 +102,20 @@ let Callo = (function() {
       }
 
       let combinedProps;
+      // spill jar content
       if (props) {
-        combinedProps = { ...this.propsJar, ...props };
+        combinedProps = { ...this.jar, ...props };
       } else {
-        combinedProps = { ...this.propsJar };
+        combinedProps = { ...this.jar };
       }
 
       const body = {
         props: combinedProps,
-        state: this._state,
       };
+      // only attach state if the state is actually present...
+      if (this._state) {
+        body.state = this._state;
+      }
       let jsonBody;
       try {
         jsonBody = JSON.stringify(body);
@@ -126,21 +124,26 @@ let Callo = (function() {
       }
 
       try {
-        let headers = {};
+        let headers;
         if (fetchSettings && fetchSettings.headers) {
-          headers = { ...headers, ...fetchSettings.headers };
+          headers = { ...fetchSettings.headers };
+        } else {
+          headers = {};
         }
+        // must set content-type to JSON
         headers = { ...headers, 'Content-Type': 'application/json' };
 
         let req = await fetch(this.endpoint, {
           ...fetchSettings,
-          headers,
+          headers, // ensure headers is not overwritten
           method: 'POST',
           body: jsonBody
         });
 
         let respObject = await req.json();
 
+        // Must clear everything first!
+        this.clear();
         if (respObject.action) {
           this.action = respObject.action;
         }
@@ -150,8 +153,13 @@ let Callo = (function() {
         if (respObject.error) {
           this.error = respObject.error;
         }
+        if (respObject.state) {
+          this._state = respObject.state;
+        }
 
-        if (respObject.action === constants.handleTypes.END) {
+        // special handling of END/UNKNOWN types
+        if (respObject.action === constants.handleTypes.END
+          || respObject.action === constants.handleTypes.UNKNOWN) {
           this._state = null;
           this.error = null;
           this.action = null;
